@@ -7,6 +7,7 @@ function App() {
   const [requirements, setRequirements] = useState("");
   const [status, setStatus] = useState("idle");
   const [resultLink, setResultLink] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -20,42 +21,34 @@ function App() {
 
     setStatus("loading");
     setResultLink("");
+    setError("");
 
-    // Тут позже подключим твой реальный backend для генерации PPTX
-    const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!topic.trim()) return;
+    try {
+      const response = await fetch("/api/presentation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic,
+          slides_count: slides,
+          style,
+          requirements: requirements || ""
+        }),
+      });
 
-  setStatus("loading");
-  setResultLink("");
+      if (!response.ok) {
+        throw new Error("Ошибка сервера");
+      }
 
-  try {
-    const response = await fetch("/api/presentation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        topic: topic,
-        slides_count: slides,
-        style: style,
-        requirements: requirements,
-      }),
-    });
-
-    if (!response.ok) throw new Error("Ошибка сети");
-
-    const data = await response.json();
-
-    // Предположим, backend возвращает ссылку на файл или текст презентации
-    setResultLink(data.presentation || "#");
-    setStatus("done");
-  } catch (err) {
-    setStatus("error");
-    console.error(err);
-  }
-};
-
+      const data = await response.json();
+      setResultLink(data.presentation || data.result || "#");
+      setStatus("done");
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setStatus("error");
+      setError("Не удалось создать презентацию. Попробуйте позже.");
+    }
   };
 
   return (
@@ -122,7 +115,7 @@ function App() {
             padding: "10px 16px",
             borderRadius: 8,
             border: "none",
-            background: "#4c6fff",
+            background: status === "loading" ? "#9aa5c1" : "#4c6fff",
             color: "white",
             fontWeight: 600,
           }}
@@ -131,12 +124,35 @@ function App() {
         </button>
       </form>
 
+      {status === "error" && (
+        <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: "#ffebee" }}>
+          <strong>Ошибка!</strong>
+          <p style={{ fontSize: 14, marginTop: 4 }}>{error}</p>
+        </div>
+      )}
+
       {status === "done" && (
         <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: "#e8f5e9" }}>
-          <strong>Черновик готов!</strong>
+          <strong>Презентация готова!</strong>
           <p style={{ fontSize: 14, marginTop: 4 }}>
-            Сейчас это заглушка. Дальше здесь появится кнопка “Скачать PPTX” и отправка файла в бота.
+            {resultLink ? resultLink : "Результат получен от сервера"}
           </p>
+          {resultLink && (
+            <a 
+              href={resultLink} 
+              style={{ 
+                display: "inline-block", 
+                marginTop: 8, 
+                padding: "8px 16px", 
+                background: "#4c6fff", 
+                color: "white", 
+                textDecoration: "none", 
+                borderRadius: 6 
+              }}
+            >
+              Скачать PPTX
+            </a>
+          )}
         </div>
       )}
     </div>
