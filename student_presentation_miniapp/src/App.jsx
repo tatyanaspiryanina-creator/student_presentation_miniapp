@@ -22,10 +22,40 @@ function App() {
     setResultLink("");
 
     // Тут позже подключим твой реальный backend для генерации PPTX
-    setTimeout(() => {
-      setStatus("done");
-      setResultLink("#");
-    }, 2000);
+    const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!topic.trim()) return;
+
+  setStatus("loading");
+  setResultLink("");
+
+  try {
+    const response = await fetch("/api/presentation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        topic: topic,
+        slides_count: slides,
+        style: style,
+        requirements: requirements,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Ошибка сети");
+
+    const data = await response.json();
+
+    // Предположим, backend возвращает ссылку на файл или текст презентации
+    setResultLink(data.presentation || "#");
+    setStatus("done");
+  } catch (err) {
+    setStatus("error");
+    console.error(err);
+  }
+};
+
   };
 
   return (
