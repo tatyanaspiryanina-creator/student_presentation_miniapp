@@ -29,25 +29,17 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          topic,
-          slides_count: slides,
-          style,
-          requirements: requirements || ""
-        }),
+        body: JSON.stringify({ topic, slides_count: slides, style, requirements }),
       });
 
-      if (!response.ok) {
-        throw new Error("Ошибка сервера");
-      }
+      if (!response.ok) throw new Error("Ошибка сервера");
 
       const data = await response.json();
-      setResultLink(data.presentation || data.result || "#");
+      setResultLink(data.presentation || "#");
       setStatus("done");
     } catch (err) {
-      console.error("Ошибка:", err);
-      setStatus("error");
       setError("Не удалось создать презентацию. Попробуйте позже.");
+      setStatus("error");
     }
   };
 
@@ -115,7 +107,7 @@ function App() {
             padding: "10px 16px",
             borderRadius: 8,
             border: "none",
-            background: status === "loading" ? "#9aa5c1" : "#4c6fff",
+            background: "#4c6fff",
             color: "white",
             fontWeight: 600,
           }}
@@ -133,26 +125,10 @@ function App() {
 
       {status === "done" && (
         <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: "#e8f5e9" }}>
-          <strong>Презентация готова!</strong>
+          <strong>Черновик готов!</strong>
           <p style={{ fontSize: 14, marginTop: 4 }}>
-            {resultLink ? resultLink : "Результат получен от сервера"}
+            {resultLink !== "#" ? <a href={resultLink}>Скачать PPTX</a> : "Результат получен."}
           </p>
-          {resultLink && (
-            <a 
-              href={resultLink} 
-              style={{ 
-                display: "inline-block", 
-                marginTop: 8, 
-                padding: "8px 16px", 
-                background: "#4c6fff", 
-                color: "white", 
-                textDecoration: "none", 
-                borderRadius: 6 
-              }}
-            >
-              Скачать PPTX
-            </a>
-          )}
         </div>
       )}
     </div>
